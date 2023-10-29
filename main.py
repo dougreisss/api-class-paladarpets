@@ -84,85 +84,36 @@ def classifier(request):
             first_row = result.first()
             conn.close()
 
-        dados_np = np.array([float(value) for value in first_row])
+       
+        if first_row is not None:
+            # Converter a tupla em um dicionário
+            column_names = result.keys()
+            row_data = dict(zip(column_names, first_row))
 
-        dados_np = np.array(dados_np).reshape(1, -1)
+            dados_np = np.array([float(value) for value in first_row])
 
-        new_ration_pred_probs = model.predict(dados_np)
+            dados_np = np.array(dados_np).reshape(1, -1)
 
-        new_ration_pred_class = np.argmax(new_ration_pred_probs, axis=1)[0]
+            new_ration_pred_probs = model.predict(dados_np)
 
-        classPet = switch_case(int(new_ration_pred_class))
+            new_ration_pred_class = np.argmax(new_ration_pred_probs, axis=1)[0]
 
-        response = {
-            'cluster': int(new_ration_pred_class),
-            'class': classPet
-        }
+            classPet = switch_case(int(new_ration_pred_class))
+
+            response = {
+                'cluster': int(new_ration_pred_class),
+                'class': classPet,
+                'sql_data': row_data
+            }
+        else:
+            response = {
+                'error': 'Nenhum resultado encontrado'
+            }
 
         resHeader = jsonify(response)
 
         resHeader.headers.add('Access-Control-Allow-Origin', '*')
         resHeader.headers.add('Access-Control-Allow-Methods', 'GET')
         resHeader.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-
-        return resHeader
-        
-    
-    if request.method == 'POST':
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket('test_model_buckets')  
-        codigoBarraJson = request.get_json()
-        
-        blob = bucket.blob('models/model_pets3.pkl')
-        blob.download_to_filename('/tmp/model.pkl')
-        model = pickle.load(open('/tmp/model.pkl', 'rb'))
-
-        codigo_barra = codigoBarraJson['codigoBarra']
-
-        sql_query = f"""
-                    SELECT 
-                        porcentagemProteinaBrutaMin,
-                        umidadeMaxGKG,
-                        porcentagemProteinaBrutaMin,
-                        proteinaBrutaMinGKG,
-                        proteinaMateriaSeca,
-                        porcentagemCalcioMax,
-                        calcioMaxGKG,
-                        calcioMateriaSeca,
-                        porcentagemMateriaFibrosa,
-                        materiaFibrosaGKG
-                    FROM [dbo].[GarantiaProduto]
-                    where codigoBarra = {codigo_barra}
-                    """
-        
-        db_engine = connect_with_connector()
-
-        query = sqlalchemy.text(sql_query)
-
-        with db_engine.connect() as conn:
-            result = conn.execute(query)
-            first_row = result.first()
-            conn.close()
-
-        dados_np = np.array([float(value) for value in first_row])
-
-        dados_np = np.array(dados_np).reshape(1, -1)
-
-        new_ration_pred_probs = model.predict(dados_np)
-
-        new_ration_pred_class = np.argmax(new_ration_pred_probs, axis=1)[0]
-
-        classPet = switch_case(int(new_ration_pred_class))
-
-        response = {
-            'cluster': int(new_ration_pred_class),
-            'class': classPet
-        }
-
-        resHeader = jsonify(response)
-
-        resHeader.headers.add("Access-Control-Allow-Origin", "*")
-        resHeader.headers.add("Access-Control-Allow-Headers", "*")
-        resHeader.headers.add("Access-Control-Allow-Methods", "*")
 
         return resHeader
