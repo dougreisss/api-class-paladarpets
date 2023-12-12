@@ -12,12 +12,12 @@ import sqlalchemy
 
 def connect_with_connector() -> sqlalchemy.engine.base.Engine:
 
-    db_user = "sqlserver"
-    db_pass = "paladarpets123"
+    db_user = "__USER__"
+    db_pass = "__PASS__"
     db_name = "prjPets"  
     instance_connection_name = "deductive-notch-396522:southamerica-east1:paladarpets"  
   
-    ip_type = IPTypes.PRIVATE if "10.3.160.4" else IPTypes.PUBLIC
+    ip_type = IPTypes.PRIVATE if "__IPPRIVATE__" else IPTypes.PUBLIC
 
     connector = Connector(ip_type)
 
